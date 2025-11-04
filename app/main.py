@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Body
 from contextlib import asynccontextmanager
 from app.db.config import create_tables
+from app.task.models import *
 from app.task.services import (
     create_task,
     get_all_task,
@@ -18,41 +19,40 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # ✅ CREATE
-@app.post("/task")
-def task_create(new_task: dict = Body(...)):
-    task = create_task(title=new_task["title"], content=new_task["content"])
+@app.post("/task", response_model=TaskOut)
+def task_create(new_task: TaskCreate):
+    # use dot notation instead of []
+    task = create_task(title=new_task.title, content=new_task.content)
     return task
 
 # ✅ READ ALL
-@app.get("/tasks")
+@app.get("/tasks", response_model=list[TaskOut])
 def all_tasks():
-    tasks = get_all_task()
-    return tasks
+    return get_all_task()
 
 # ✅ READ ONE
-@app.get("/task/{task_id}")
+@app.get("/task/{task_id}", response_model=TaskOut)
 def get_tasks(task_id: int):
-    task = get_task_by_id(task_id)
-    return task
+    return get_task_by_id(task_id)
 
 # ✅ PUT (Full Update)
-@app.put("/task/{task_id}")
-def put_task(task_id: int, new_task: dict = Body(...)):
-    task = update_task(task_id, title=new_task["title"], content=new_task["content"])
+@app.put("/task/{task_id}", response_model=TaskOut)
+def put_task(task_id: int, new_task: TaskUpdate):
+    task = update_task(task_id, title=new_task.title, content=new_task.content)
     return task
 
 # ✅ PATCH (Partial Update)
-@app.patch("/task/{task_id}")
-def patch_task_api(task_id: int, new_task: dict = Body(...)):
+@app.patch("/task/{task_id}", response_model=TaskOut)
+def patch_task_api(task_id: int, new_task: TaskPatch):
     task = patch_task(
         task_id,
-        title=new_task.get("title"),  # ✅ FIXED - get() is a function, not attribute
-        content=new_task.get("content")
+        title=new_task.title,
+        content=new_task.content
     )
     return task
 
 # ✅ DELETE
 @app.delete("/task/{task_id}")
 def delete_task_api(task_id: int):
-    task = delete_task(task_id)
-    return task
+    deleted_task = delete_task(task_id)
+    return {"message": "Task deleted successfully", "task": deleted_task}
