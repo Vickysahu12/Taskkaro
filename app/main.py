@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Body
 from contextlib import asynccontextmanager
-from app.db.config import create_tables
+from app.db.config import create_tables, sessionDep
 from app.task.models import *
 from app.task.services import (
     create_task,
